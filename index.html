@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Voice Demo</title>
+</head>
+<body>
+    <h2>🎤 录音</h2>
+
+    <button id="startBtn">开始录音</button>
+    <button id="stopBtn">停止录音</button>
+
+    <script>
+        let ws;
+        let mediaRecorder;
+
+        document.getElementById("startBtn").onclick = async () => {
+            ws = new WebSocket("ws://localhost:8000/ws");
+
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0 && ws.readyState === 1) {
+                    event.data.arrayBuffer().then(buffer => {
+                        ws.send(buffer);
+                    });
+                }
+            };
+
+            mediaRecorder.start(100);
+        };
+
+        document.getElementById("stopBtn").onclick = () => {
+            mediaRecorder.stop();
+            ws.close();
+        };
+    </script>
+</body>
+</html>
